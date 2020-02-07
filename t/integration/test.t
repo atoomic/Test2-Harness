@@ -197,6 +197,24 @@ yath(
     );
 }
 
+{
+    my $sdir = $dir . '-utf8';
+
+    yath(
+        command => 'test',
+        args => [ '-v', '--ext=tx', $sdir ],
+        exit => 0,
+        debug => 2,
+        test => sub {
+            my $out = shift;
+
+            unlike($out->{output}, qr{\Qdoes not map to Unicode\E}, q[no 'does not map to Unicode']);
+            unlike($out->{output}, qr{\QMalformed UTF-8 character\E}, q[no 'Malformed UTF-8 character']);
+            unlike($out->{output}, qr{FAILED}, q[no failures]);
+        },
+    );
+}
+
 if ("$]" >= 5.026) {
     note q[Checking %INC and @INC setup];
 
