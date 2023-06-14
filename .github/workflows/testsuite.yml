@@ -9,8 +9,43 @@ on:
   pull_request:
 
 jobs:
-  perl:
 
+  #
+  # A basic and simple test run
+  #
+
+  ubuntu:
+    env:
+      PERL_USE_UNSAFE_INC: 0
+      AUTHOR_TESTING: 1
+      AUTOMATED_TESTING: 1
+      RELEASE_TESTING: 1
+      PERL_CARTON_PATH: $GITHUB_WORKSPACE/local
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: perl -V
+      - name: install dependencies from cpanfile.ci
+        uses: perl-actions/install-with-cpm@stable
+        with:
+          cpanfile: "cpanfile.ci"
+      - name: install dependencies from cpanfile
+        uses: perl-actions/install-with-cpm@stable
+        with:
+          cpanfile: "cpanfile"          
+      - run: perl Makefile.PL
+      - run: make
+      - run: make test
+
+  #
+  # Only trigger the matrix if the testsuite pass above
+  #
+
+  perl:
+    name: "linux Perl v${{ matrix.perl-version }}"
+    needs: [ubuntu]
     runs-on: ubuntu-latest
 
     env:
@@ -44,15 +79,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: perl -V
-        run: perl -V
-      - name: Install Dependencies CI
-        run: cpm install -g --show-build-log-on-failure --cpanfile cpanfile.ci
+      - run: perl -V
       - name: Install Dependencies
-        run: cpm install -g --show-build-log-on-failure --cpanfile cpanfile
-      - name: perl Makefile.PL
-        run: perl Makefile.PL
-      - name: make
-        run: make
-      - name: Run Tests
-        run: make test
+        run: |
+          cpm install -g --show-build-log-on-failure --cpanfile cpanfile.ci
+          cpm install -g --show-build-log-on-failure --cpanfile cpanfile
+      - run: perl Makefile.PL
+      - run: make
+      - run: make test
